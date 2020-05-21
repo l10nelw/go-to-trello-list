@@ -1,33 +1,36 @@
 
-const $body = document.body;
-let currentTab;
+const $POPUP = document.body;
+const $NOTREADY = $POPUP.querySelector('aside');
+let TAB_ID;
 
-init();
-$body.addEventListener('click', onClick);
+onPopupOpen();
+$POPUP.addEventListener('click', onClick);
 
-async function init() {
-    currentTab = await getCurrentTab();
-    const { names } = await messageTab({ popup: true });
-    names.forEach(addButton);
+async function onPopupOpen() {
+    TAB_ID = await getTabId();
+    const response = await sendMessageToTab({ needNames: true }); // Expect array of list names
+    if (!response) return;
+    $NOTREADY.remove();
+    response.names.forEach(addButton);
 }
 
 function onClick(event) {
-    messageTab({ button: event.target.value });
+    sendMessageToTab({ scrollTo: event.target.value }); // Send the target list's index
     window.close();
 }
 
-async function getCurrentTab() {
+async function getTabId() {
     const [tab] = await browser.tabs.query({ currentWindow: true, active: true });
-    return tab;
-}
-
-async function messageTab(message) {
-    return await browser.tabs.sendMessage(currentTab.id, message);
+    return tab.id;
 }
 
 function addButton(name, index) {
     const $button = document.createElement('button');
     $button.textContent = name;
     $button.value = index;
-    $body.appendChild($button);
+    $POPUP.appendChild($button);
+}
+
+async function sendMessageToTab(message) {
+    return browser.tabs.sendMessage(TAB_ID, message).catch(() => null);
 }

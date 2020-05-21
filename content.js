@@ -1,21 +1,22 @@
+let $NAMES; // List-name elements on the board
 
-const $board = document.getElementById('board');
-let $names;
+browser.runtime.onMessage.addListener(receiveMessage);
 
-browser.runtime.onMessage.addListener(onMessageReceived);
-
-async function onMessageReceived(message) {
-
-    if (message.popup) {
-        $names = [...$board.querySelectorAll('.list-header-name')];
-        const names = $names.map($ => $.textContent);
-        return { names };
+async function receiveMessage(message) {
+    // From popup when it opens
+    if (message.needNames) {
+        return { names: getNames() };
     }
-
-    if ('button' in message) {
-        return scrollTo($names[message.button]);
+    // From popup when a button is clicked; contains a name index
+    if ('scrollTo' in message) {
+        return scrollTo($NAMES[message.scrollTo]);
     }
+}
 
+function getNames() {
+    $NAMES = document.body.querySelectorAll('.list-header-name');
+    const names = [...$NAMES].map($ => $.textContent);
+    return names;
 }
 
 function scrollTo($) {
